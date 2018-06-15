@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <title>Video Stream</title>
+    <link rel="stylesheet" href="/static/components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/fontawesome-free-5.0.13/web-fonts-with-css/css/fontawesome-all.css">
+    <script src="/static/components/jquery/dist/jquery.min.js"></script>
+    <script src="/static/components/bootstrap/dist/js/bootstrap.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="col-sm-12 text-center">
+        <h1>Video Stream</h1>
+        <img src="{{ url_for('video_feed') }}">
+        <div class="row text-center" style="margin-top: 20px">
+          <div class="col-md-12 text-center">
+            <button id="scroll-right" class="btn scroller btn-primary"><i class="fas fa-chevron-left"></i></button>
+            <button id="scroll-left" class="btn scroller btn-primary"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(document).ready(function () {
+      var pos = Number("{{pos}}");
+      
+      if (pos <= 18) {
+        $("#scroll-left").prop("disabled", true);
+      } else if (pos >= 165) {
+        $("#scroll-right").prop("disabled", true);
+      }
+      
+      $(".scroller").click(function () {
+        var new_val;
+        if ($(this).attr('id') === 'scroll-left') {
+          new_val = pos - 10;
+        } else if ($(this).attr('id') === 'scroll-right') {
+          new_val = pos + 10;
+        }
+        $('.scroller').attr('disabled', true);
+        $.ajax({
+          url: '/set-pos',
+          type: 'put',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            pos: new_val
+          }),
+          success: function (data) {
+            console.log(data);
+            console.log(new_val);
+            if (new_val > 18) {
+              $("#scroll-left").removeAttr('disabled');
+            }
+            if (new_val < 165) {
+              console.log('removing');
+              $("#scroll-right").removeAttr('disabled');
+            }
+            pos = new_val
+          },
+          error: function (msg) {
+            console.log(msg);
+          }
+        });
+      });
+    });
+  </script>
+</html>
