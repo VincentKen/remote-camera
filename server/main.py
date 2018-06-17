@@ -17,11 +17,11 @@ keep_alive = True
 image = None
 faces = None
 
+cam_id = 1
+
 time.sleep(2)
 arduino.write(b'a')
 arduino.flush()
-
-keep_alive = True
 
 def stop():
     global keep_alive
@@ -30,7 +30,7 @@ def stop():
 
 class VideoCamera(object):
     def __init__(self):
-        self.video = cv2.VideoCapture(0)
+        self.video = cv2.VideoCapture(cam_id)
     
     def __del__(self):
         self.video.release()
@@ -67,7 +67,7 @@ class FaceDetectionThread(threading.Thread):
                 )
 
 
-class ClientThread(threading.Thread):
+class SerialCommThread(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.waiting_for_dist = False
@@ -99,7 +99,6 @@ class ClientThread(threading.Thread):
                 data = arduino.read()
                 if data:
                     data = ord(data)
-                    # print(data)
                     if not self.waiting_for_dist and not self.waiting_for_pos:
                         self.handle_command(data)
                     elif self.waiting_for_dist:
@@ -132,21 +131,18 @@ def video_feed():
 @app.route('/set-pos', methods=['PUT'])
 def set_pos():
     global set_servo_pos
-    print(request.data)
     json = request.get_json()
-    print(json)
     set_servo_pos = json['pos']
     return 'success'
 
 try:
     face_detection_thread = FaceDetectionThread()
     face_detection_thread.start()
-    client_thread = ClientThread()
-    client_thread.start()
+    serial_comm_thread = SerialCommThread()
+    serial_comm_thread.start()
 
     app.run(host='0.0.0.0', debug=True)
 except KeyboardInterrupt:
     stop()
-    client_thread.join()
+    serial_comm_thread.join()
     face_detection_thread.join()
-
